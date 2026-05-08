@@ -4,14 +4,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 import uvicorn
 
-from database import engine, Base
+from database import engine
 from routers import auth, jobs, resumes, applications, ai_features, companies, notifications, uploads
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Создаём все таблицы при старте
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
 
 app = FastAPI(
