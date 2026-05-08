@@ -1,5 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from urllib.parse import quote_plus
 import os
 
@@ -8,8 +8,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 # Правильно обрабатываем @ в пароле
 if DATABASE_URL and "postgresql" in DATABASE_URL:
     try:
-        prefix = "postgresql+asyncpg://"
+        prefix = "postgresql+psycopg2://"
         if not DATABASE_URL.startswith(prefix):
+            DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", prefix)
             DATABASE_URL = DATABASE_URL.replace("postgresql://", prefix)
 
         rest = DATABASE_URL[len(prefix):]
@@ -27,15 +28,15 @@ if DATABASE_URL and "postgresql" in DATABASE_URL:
     except Exception as e:
         print(f"URL parsing warning: {e}")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(engine, expire_on_commit=False)
 
 class Base(DeclarativeBase):
     pass
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
+def get_db():
+    with SessionLocal() as session:
         try:
             yield session
         finally:
-            await session.close()
+            session.close()
